@@ -28,7 +28,7 @@ USER appuser
 COPY --from=build /bin/server /bin/
 COPY --from=build /app/site /app/site
 
-ENV LEPTOS_OUTPUT_NAME="leptos-hao"
+ENV LEPTOS_OUTPUT_NAME="rr"
 ENV LEPTOS_SITE_ROOT="/app/site"
 ENV LEPTOS_SITE_PKG_DIR="pkg"
 ENV LEPTOS_SITE_ADDR="0.0.0.0:3000"

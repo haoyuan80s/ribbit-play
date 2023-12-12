@@ -38,7 +38,7 @@ fn HomePage() -> impl IntoView {
 
     view! {
         <div class="bg-gradient-to-tl from-blue-800 to-blue-500 text-white font-mono flex flex-col min-h-screen">
-            <h1>"Welcome to Leptos!"</h1>
+            <h1>"Welcome to Leptos!!!"</h1>
             <button on:click=on_click>"Click Me: " {count}</button>
         </div>
     }
