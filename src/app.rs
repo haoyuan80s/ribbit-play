@@ -12,7 +12,7 @@ pub fn App() -> impl IntoView {
         <Stylesheet id="leptos" href="/pkg/rr.css"/>
 
         // sets the document title
-        <Title text="Welcome to Leptos"/>
+        <Title text="Welcome to Ribbit Ribbit"/>
 
         // content for this welcome page
         <Router fallback=|| {
@@ -33,13 +33,14 @@ pub fn App() -> impl IntoView {
 #[component]
 fn HomePage() -> impl IntoView {
     // Creates a reactive value to update the button
-    let (count, set_count) = create_signal(0);
-    let on_click = move |_| set_count.update(|count| *count += 1);
-
     view! {
-        <div class="bg-gradient-to-tl from-blue-800 to-blue-500 text-white font-mono flex flex-col min-h-screen">
-            <h1>"Welcome to Leptos!!!"</h1>
-            <button on:click=on_click>"Click Me: " {count}</button>
+        <div class="text-4xl bg-gradient-to-tl from-green-800 to-green-500 text-yellow-100 font-mono flex flex-row min-h-screen">
+            Ribbit Ribbit
+
+            <iframe
+                title="like button"
+                src="https://like-button-boko8kc8.fermyon.app/static/likebutton.html?key=test2"
+            ></iframe>
         </div>
     }
 }
