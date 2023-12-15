@@ -1,39 +1,57 @@
-# syntax=docker/dockerfile:1
+# # syntax=docker/dockerfile:1
 
-ARG RUST_VERSION=1.76.0-nightly
-FROM rustlang/rust:nightly AS build
+# Get started with a build env with Rust nightly
+FROM rustlang/rust:nightly-bullseye as chef
 
-COPY . /app/
+# If you’re using stable, use this instead
+# FROM rust:1.70-bullseye as chef
 
+# Install cargo-binstall, which makes it easier to install other
+# cargo extensions like cargo-leptos
+RUN wget https://github.com/cargo-bins/cargo-binstall/releases/latest/download/cargo-binstall-x86_64-unknown-linux-musl.tgz
+RUN tar -xvf cargo-binstall-x86_64-unknown-linux-musl.tgz
+RUN cp cargo-binstall /usr/local/cargo/bin
+
+# Install cargo-leptos
+RUN cargo binstall cargo-leptos -y
+RUN cargo binstall cargo-chef -y
+
+# Add the WASM target
+RUN rustup target add wasm32-unknown-unknown
+
+# Make an /app dir, which everything will eventually live in
+RUN mkdir -p /app
 WORKDIR /app
 
-RUN cargo install cargo-leptos && \
-  rustup target add wasm32-unknown-unknown && \
-  cargo leptos build --release && \
-  cp ./target/release/rr /bin/server && \
-  cp -r ./target/site /app/site
+FROM chef AS planner
+COPY . .
+RUN cargo chef prepare  --recipe-path recipe.json
 
-FROM debian:bullseye-slim AS final
+FROM chef AS builder
+COPY --from=planner /app/recipe.json recipe.json
+# Build dependencies - this is the caching Docker layer!
+RUN cargo chef cook --release --all-features --recipe-path recipe.json
+# Build application
+COPY . .
 
-RUN adduser \
-  --disabled-password \
-  --gecos "" \
-  --home "/nonexistent" \
-  --shell "/sbin/nologin" \
-  --no-create-home \
-  --uid 10001 \
-  appuser
-USER appuser
+# Build the app
+RUN cargo leptos build --release -vv
 
-COPY --from=build /bin/server /bin/
-COPY --from=build /app/site /app/site
+FROM rustlang/rust:nightly-bullseye as runner
+# Copy the server binary to the /app directory
+COPY --from=builder /app/target/release/rr /app/
+# /target/site contains our JS/WASM/CSS, etc.
+COPY --from=builder /app/target/site /app/site
+# Copy Cargo.toml if it’s needed at runtime
+COPY --from=builder /app/Cargo.toml /app/
+
+WORKDIR /app
 
 ENV LEPTOS_OUTPUT_NAME="rr"
 ENV LEPTOS_SITE_ROOT="/app/site"
 ENV LEPTOS_SITE_PKG_DIR="pkg"
 ENV LEPTOS_SITE_ADDR="0.0.0.0:3000"
-ENV LEPTOS_RELOAD_PORT="3001"
 
-EXPOSE 3000 3001
-
-CMD ["/bin/server"]
+EXPOSE 3000
+# Run the server
+CMD ["/app/rr"]
